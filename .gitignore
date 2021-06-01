@@ -113,8 +113,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Excel
-*.xlsx
-
 # PyCharm
 .idea/
+
+# Excel
+*.xlsx
