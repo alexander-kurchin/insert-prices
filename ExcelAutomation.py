@@ -1,4 +1,5 @@
 from openpyxl import load_workbook
+from prettytable import PrettyTable
 
 
 DATA_FILE, DATA_SHEET_NAME = 'data.xlsx', 'prices'
@@ -25,18 +26,17 @@ def user_input():
     if user_sheet_name == '': user_sheet_name = 'Лист1'
     price_column = input('Enter price column (Press "Enter" for default "P"): ').strip().upper()
     if price_column == '': price_column = 'P'
-    print_user_input(user_file, user_sheet_name, price_column)
     return user_file, user_sheet_name, price_column
 
 
 def print_user_input(user_file, user_sheet_name, price_column):
-    # There will be a pretty table
     print()
-    print('Your file is ', user_file)
-    print('Target sheet is ', user_sheet_name)
-    print('Price column is ', price_column)
-    print()
-    print()
+    pretty_table = PrettyTable()
+    pretty_table.field_names = ['Parameter', 'Value']
+    pretty_table.add_rows([['Your file', user_file],
+                           ['Target sheet', user_sheet_name],
+                           ['Price column', price_column]])
+    print(pretty_table)
 
 
 def insert_prices(data_file, data_sheet_name, user_file, user_sheet_name, price_column):
@@ -45,8 +45,13 @@ def insert_prices(data_file, data_sheet_name, user_file, user_sheet_name, price_
     user_book = load_workbook(filename=user_file)
     user_sheet = user_book[user_sheet_name]
 
+    summary = PrettyTable()
+    summary.field_names = ['Code', 'Price']
+
     for user_row in user_sheet:
-        if user_row[0].value == None: break
+        if user_row[0].value is None: break
+        if user_row[0].value in ('Код', 'Code'): continue
+
         final_price = 'Didn\'t find'
         for data_row in data_sheet:
             if data_row[0].value == user_row[0].value:
@@ -54,26 +59,31 @@ def insert_prices(data_file, data_sheet_name, user_file, user_sheet_name, price_
                 final_price = round(price * 1.04, 2)
                 user_sheet[price_column + str(user_row[0].row)].value = final_price
                 break
-        add_summary(user_row[0].value, final_price)
+
+        summary.add_row([user_row[0].value, final_price])
 
     user_book.save(filename=user_file)
-
-
-def add_summary(code, price):
-    print(code, price)
-
-
-def print_summary():
-    # There will be a pretty table
-    print()
-    print()
+    print('Summary:'.center(28))
+    print(summary)
 
 
 def run():
     print_logo()
-    insert_prices(DATA_FILE, DATA_SHEET_NAME, *user_input())
-    print_summary()
-    input('Done! Press "Enter"...')
+    user_items = user_input()
+    print_user_input(*user_items)
+    print('\nRun...\n')
+    try:
+        insert_prices(DATA_FILE, DATA_SHEET_NAME, *user_items)
+    except Exception as e:
+        print('Error!\n', e, '\n')
+    else:
+        print('Done!')
+    input('''(:`--..___...-''``-._             |`._
+  ```--...--.      . `-..__      .`/ _\  
+            `\     '       ```--`.    />
+            : :   :               `:`-'
+             `.:.  `.._--...___     ``--...__      
+                ``--..,)       ```----....__,) Press "Enter" to exit.''')
 
 
 if __name__ == '__main__':
